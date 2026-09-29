@@ -77,37 +77,40 @@
     const targets = [];
     let n; let count = 0;
     while ((n = walker.nextNode()) && count < 3000) {
+      re.lastIndex = 0;
       if (re.test(n.nodeValue)) {
         targets.push(n);
         count++;
       }
-      re.lastIndex = 0;
     }
 
     for (const node of targets) {
-      const html = node.nodeValue.replace(re, (m) => {
-        const type = valueToType.get(m) || 'unknown';
-        return `\x00TI\x00${type}\x00${m}\x00/TI\x00`;
-      });
-      if (!html.includes('\x00TI\x00')) continue;
+      const text = node.nodeValue;
+      re.lastIndex = 0;
       const frag = document.createDocumentFragment();
-      const parts = html.split(/\x00TI\x00|\x00\/TI\x00/);
-      // parts alternates: [text, type, value, text, type, value, ...]
-      for (let i = 0; i < parts.length; i++) {
-        if (i % 3 === 0) {
-          frag.appendChild(document.createTextNode(parts[i]));
-        } else if (i % 3 === 1) {
-          const type = parts[i];
-          const value = parts[i + 1] || '';
-          const span = document.createElement('span');
-          span.className = `ti-ioc ti-ioc-${type}`;
-          span.textContent = value;
-          span.dataset.tiType = type;
-          span.dataset.tiValue = value;
-          span.tabIndex = 0;
-          frag.appendChild(span);
-          i++; // consume value
+      let lastIndex = 0;
+      let match;
+      let hadMatch = false;
+      while ((match = re.exec(text)) !== null) {
+        hadMatch = true;
+        const start = match.index;
+        const value = match[0];
+        const type = valueToType.get(value) || 'unknown';
+        if (start > lastIndex) {
+          frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
         }
+        const span = document.createElement('span');
+        span.className = `ti-ioc ti-ioc-${type}`;
+        span.textContent = value;
+        span.dataset.tiType = type;
+        span.dataset.tiValue = value;
+        span.tabIndex = 0;
+        frag.appendChild(span);
+        lastIndex = start + value.length;
+      }
+      if (!hadMatch) continue;
+      if (lastIndex < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
       }
       try { node.parentNode?.replaceChild(frag, node); } catch (_) {}
     }
