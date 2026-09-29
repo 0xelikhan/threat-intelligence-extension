@@ -34,21 +34,8 @@
       render();
     });
     $('#copy-report').addEventListener('click', copyReport);
-    $('#send-copilot').addEventListener('click', openCopilotModal);
+    $('#send-copilot').addEventListener('click', openCopilotWindow);
     $('#settings-btn').addEventListener('click', () => chrome.runtime.openOptionsPage());
-
-    $('#modal-close').addEventListener('click', closeModal);
-    $('.ti-modal-backdrop').addEventListener('click', closeModal);
-    $('#modal-copy').addEventListener('click', async () => {
-      await navigator.clipboard.writeText($('#modal-prompt').value);
-      toast('Copied');
-    });
-    $('#modal-copy-open').addEventListener('click', async () => {
-      await navigator.clipboard.writeText($('#modal-prompt').value);
-      chrome.tabs.create({ url: 'https://copilot.microsoft.com/' });
-      toast('Copied, paste with Ctrl+V');
-      closeModal();
-    });
 
     $('#pastebox').addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') parseInput();
@@ -124,17 +111,19 @@
     toast('Report copied');
   }
 
-  function openCopilotModal() {
+  async function openCopilotWindow() {
     if (!state.iocs.length) return toast('Nothing to send');
     const enrichments = state.iocs.map(i => state.enrichments[key(i)]).filter(Boolean);
     if (!enrichments.length) return toast('Enrich first');
     const prompt = SOCReport.buildCopilotPrompt(enrichments, { pageUrl: state.pageUrl });
-    $('#modal-prompt').value = prompt;
-    $('#modal').hidden = false;
-    setTimeout(() => $('#modal-prompt').focus(), 50);
+    await chrome.storage.local.set({ pendingCopilotPrompt: prompt });
+    chrome.windows.create({
+      url: chrome.runtime.getURL('copilot/copilot.html'),
+      type: 'popup',
+      width: 620,
+      height: 720,
+    });
   }
-
-  function closeModal() { $('#modal').hidden = true; }
 
   function render() {
     $('#ioc-count').textContent = state.iocs.length;
