@@ -212,12 +212,131 @@
     const rows = [];
 
     if (r.virustotal && !r.virustotal.error) {
-      if (r.virustotal.notFound) rows.push(kv('VirusTotal', 'not indexed', r.virustotal.link));
+      const v = r.virustotal;
+      if (v.notFound) rows.push(kv('VirusTotal', 'not indexed', v.link));
       else {
-        const bar = ratioBar(r.virustotal.malicious || 0, r.virustotal.total || 0);
-        rows.push(kv('VirusTotal', `${bar} ${r.virustotal.malicious || 0}/${r.virustotal.total || 0}`, r.virustotal.link));
+        const bar = ratioBar(v.malicious || 0, v.total || 0);
+        rows.push(kv('VirusTotal', `${bar} ${v.malicious || 0}/${v.total || 0}`, v.link));
+
+        // GTI verdict
+        if (v.gti?.verdict) {
+          const sev = v.gti.severity ? ` / ${v.gti.severity}` : '';
+          const score = v.gti.threatScore != null ? ` · score ${v.gti.threatScore}` : '';
+          rows.push(kv('GTI', `${v.gti.verdict}${sev}${score}`));
+          if (v.gti.description) rows.push(`<div class="ti-desc">${escapeHtml(v.gti.description.slice(0, 400))}</div>`);
+        }
+        if (v.mandiantScore != null) rows.push(kv('Mandiant IC', String(v.mandiantScore)));
+
+        // Threat family / categories
+        if (v.threatFamily) rows.push(kv('Threat', v.threatFamily));
+        if (v.threatCategories?.length) rows.push(kv('Category', v.threatCategories.join(', ')));
+        if (v.threatFamilies?.length && !v.threatFamily) rows.push(kv('Family', v.threatFamilies.join(', ')));
+
+        // Popularity ranks (domains)
+        if (v.popularity?.length) {
+          const ranks = v.popularity.slice(0, 3).map(p => `${p.source}: ${p.rank}`).join(' · ');
+          rows.push(kv('Popularity', ranks));
+        }
+
+        // Categories per-vendor (domains/URLs)
+        if (v.categories && typeof v.categories === 'object') {
+          const cats = Object.entries(v.categories).slice(0, 4).map(([k, val]) => `${k}=${val}`).join(', ');
+          if (cats) rows.push(kv('Vendor Tags', cats));
+        }
+
+        // Tags
+        if (v.tags?.length) rows.push(kv('Tags', v.tags.slice(0, 8).join(', ')));
+
+        // Sigma/IDS/YARA
+        if (v.sigmaHits?.length) rows.push(kv('Sigma', v.sigmaHits.slice(0, 3).map(s => `${s.title || s.id} [${s.level || ''}]`).join(' · ')));
+        if (v.idsHits?.length) rows.push(kv('IDS', v.idsHits.slice(0, 3).map(s => `${s.alert || s.category}`).join(' · ')));
+        if (v.yaraHits?.length) rows.push(kv('YARA', v.yaraHits.slice(0, 3).map(s => s.name || s.ruleset).join(' · ')));
+
+        // Sandbox verdicts
+        if (v.sandbox?.length) {
+          const parts = v.sandbox.slice(0, 3).map(s => `${s.sandbox}: ${s.category}${s.malwareClasses?.length ? ' (' + s.malwareClasses.slice(0, 2).join(', ') + ')' : ''}`);
+          rows.push(kv('Sandbox', parts.join(' · ')));
+        }
+
+        // Signature (files)
+        if (v.signature) {
+          const sig = v.signature;
+          const verdict = sig.verified === 'Signed' ? '✓ signed' : (sig.verified || 'unsigned');
+          const signer = sig.signers ? String(sig.signers).split(';')[0] : '';
+          rows.push(kv('Sig', `${verdict}${signer ? ' · ' + signer : ''}`));
+        }
+
+        // JARM / TLS cert
+        if (v.jarm) rows.push(kv('JARM', v.jarm));
+        if (v.httpsCert) {
+          const c = v.httpsCert;
+          const issuer = c.issuer?.CN || c.issuer?.O || '';
+          const subject = c.subject?.CN || '';
+          if (issuer || subject) rows.push(kv('TLS Cert', `${subject}${subject && issuer ? ' / ' : ''}${issuer}`));
+        }
+
+        // Passive DNS (domains)
+        if (v.lastDns?.length) {
+          const dns = v.lastDns.slice(0, 4).map(d => `${d.type}: ${d.value}`).join(' · ');
+          rows.push(kv('VT DNS', dns));
+        }
+
+        // File extras
+        if (v.fileExtras) {
+          const fe = v.fileExtras;
+          if (fe.typeTag || fe.magic) rows.push(kv('File Type', `${fe.typeTag || ''}${fe.typeTag && fe.magic ? ' · ' : ''}${fe.magic || ''}`));
+          if (fe.size) rows.push(kv('Size', `${fe.size.toLocaleString()} bytes`));
+          if (fe.imphash) rows.push(kv('imphash', fe.imphash));
+          if (fe.ssdeep) rows.push(kv('ssdeep', fe.ssdeep));
+          if (fe.timesSubmitted) rows.push(kv('Submissions', `${fe.timesSubmitted} · ${fe.uniqueSources} unique sources`));
+          if (fe.creationDate) rows.push(kv('Compiled', new Date(fe.creationDate * 1000).toISOString().slice(0, 10)));
+        }
+
+        // IP extras
+        if (v.ipExtras) {
+          const ie = v.ipExtras;
+          if (ie.network) rows.push(kv('VT Network', `${ie.network}${ie.rir ? ' · ' + ie.rir : ''}`));
+        }
+
+        // URL extras
+        if (v.urlExtras) {
+          const ue = v.urlExtras;
+          if (ue.finalUrl && ue.finalUrl !== enriched.ioc.value) rows.push(kv('Final URL', ue.finalUrl));
+          if (ue.title) rows.push(kv('Title', ue.title));
+          if (ue.threatNames?.length) rows.push(kv('Threat Names', ue.threatNames.slice(0, 3).join(', ')));
+        }
       }
     }
+
+    // VT Behavior (files)
+    if (r.vtBehavior && !r.vtBehavior.error && !r.vtBehavior.notFound) {
+      const b = r.vtBehavior;
+      if (b.processesCreated?.length) rows.push(kv('Processes', b.processesCreated.slice(0, 3).join(' · ')));
+      if (b.commandExecutions?.length) rows.push(kv('Commands', b.commandExecutions.slice(0, 2).map(c => c.length > 100 ? c.slice(0, 100) + '…' : c).join(' | ')));
+      if (b.filesDropped?.length) rows.push(kv('Files Dropped', b.filesDropped.slice(0, 3).map(f => f.path).filter(Boolean).join(' · ')));
+      if (b.registryKeysSet?.length) rows.push(kv('Registry Set', b.registryKeysSet.slice(0, 3).join(' · ')));
+      if (b.mutexesCreated?.length) rows.push(kv('Mutexes', b.mutexesCreated.slice(0, 3).join(', ')));
+      if (b.dnsLookups?.length) rows.push(kv('DNS Queries', b.dnsLookups.slice(0, 5).join(', ')));
+      if (b.ipTraffic?.length) rows.push(kv('IP Traffic', b.ipTraffic.slice(0, 5).join(', ')));
+      if (b.mitre?.length) {
+        const t = b.mitre.slice(0, 6).map(m => m.id || m.signature_description).filter(Boolean).join(', ');
+        if (t) rows.push(kv('MITRE', t));
+      }
+    }
+
+    // GTI Collections (attribution)
+    if (r.gtiCollections && !r.gtiCollections.error && !r.gtiCollections.notFound && r.gtiCollections.count > 0) {
+      const g = r.gtiCollections;
+      const linkList = (items) => items.slice(0, 4).map(a =>
+        `<a class="ti-link" href="${escapeHtml(a.link)}" target="_blank" rel="noopener">${escapeHtml(a.name)}</a>`
+      ).join(' · ');
+      const rawRow = (k, html) => `<div class="ti-row"><span class="ti-k">${escapeHtml(k)}</span><span class="ti-v">${html}</span></div>`;
+      if (g.grouped.threat_actor.length) rows.push(rawRow('Threat Actor', linkList(g.grouped.threat_actor)));
+      if (g.grouped.malware_family.length) rows.push(rawRow('Malware', linkList(g.grouped.malware_family)));
+      if (g.grouped.campaign.length) rows.push(rawRow('Campaign', linkList(g.grouped.campaign)));
+      if (g.grouped.report.length) rows.push(rawRow('Reports', linkList(g.grouped.report)));
+    }
+
     if (r.abuseipdb && !r.abuseipdb.error) {
       const conf = r.abuseipdb.confidence || 0;
       const dot = conf >= 75 ? '🔴' : conf >= 25 ? '🟠' : '🟢';

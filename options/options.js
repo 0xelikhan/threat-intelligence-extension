@@ -18,6 +18,8 @@
     $('#private-ips').checked = !!s.behavior.excludePrivateIPs;
     $('#known-tld').checked = !!s.behavior.requireKnownTLD;
     $('#defang-copy').checked = !!s.behavior.defangOnCopy;
+    $('#gti-enabled').checked = !!s.behavior.gtiEnabled;
+    $('#vt-behavior').checked = s.behavior.vtBehaviorEnabled !== false;
 
     for (const c of (s.apiKeys.custom || [])) addCustomRow(c);
 
@@ -64,6 +66,8 @@
         excludePrivateIPs: $('#private-ips').checked,
         requireKnownTLD: $('#known-tld').checked,
         defangOnCopy: $('#defang-copy').checked,
+        gtiEnabled: $('#gti-enabled').checked,
+        vtBehaviorEnabled: $('#vt-behavior').checked,
       },
     };
 
