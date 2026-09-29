@@ -1,0 +1,180 @@
+/* Threat Intelligence — content script styles */
+
+/* IOC pill inline highlight */
+.ti-ioc {
+  border-bottom: 1px dashed rgba(0, 229, 255, 0.55);
+  cursor: help;
+  padding: 0 1px;
+  border-radius: 2px;
+  transition: background 120ms ease;
+}
+.ti-ioc:hover, .ti-ioc:focus {
+  background: rgba(0, 229, 255, 0.10);
+  outline: none;
+}
+.ti-ioc-ipv4, .ti-ioc-ipv6 { border-bottom-color: rgba(0, 229, 255, 0.65); }
+.ti-ioc-domain, .ti-ioc-url { border-bottom-color: rgba(120, 180, 255, 0.65); }
+.ti-ioc-md5, .ti-ioc-sha1, .ti-ioc-sha256 { border-bottom-color: rgba(255, 200, 100, 0.65); }
+.ti-ioc-cve { border-bottom-color: rgba(255, 90, 110, 0.7); }
+.ti-ioc-mitre_technique, .ti-ioc-mitre_tactic { border-bottom-color: rgba(200, 130, 255, 0.65); }
+.ti-ioc-email { border-bottom-color: rgba(140, 220, 160, 0.65); }
+.ti-ioc-registry, .ti-ioc-filepath { border-bottom-color: rgba(200, 200, 200, 0.5); }
+
+/* Hover card */
+#ti-hover-card {
+  position: absolute;
+  z-index: 2147483646;
+  display: none;
+  min-width: 320px;
+  max-width: 420px;
+  background: linear-gradient(180deg, rgba(14, 18, 26, 0.98) 0%, rgba(11, 15, 22, 0.98) 100%);
+  color: #e6f1ff;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.55), 0 0 24px rgba(0, 229, 255, 0.10);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 10px 12px 8px;
+  backdrop-filter: blur(6px);
+}
+
+#ti-hover-card .ti-hc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+#ti-hover-card .ti-hc-type {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #0e1218;
+  background: linear-gradient(135deg, #00e5ff 0%, #7bffcf 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+#ti-hover-card .ti-hc-value {
+  flex: 1;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: #d5f4ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+#ti-hover-card .ti-hc-close {
+  background: transparent;
+  color: #6c7a89;
+  border: 0;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+#ti-hover-card .ti-hc-close:hover { color: #ff5a6e; }
+
+#ti-hover-card .ti-hc-body { display: flex; flex-direction: column; gap: 4px; }
+
+#ti-hover-card .ti-row {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+}
+#ti-hover-card .ti-row:last-child { border-bottom: 0; }
+#ti-hover-card .ti-k {
+  color: #7c8ea3;
+  min-width: 80px;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding-top: 1px;
+}
+#ti-hover-card .ti-v {
+  color: #e6f1ff;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  word-break: break-all;
+}
+#ti-hover-card .ti-bar {
+  font-family: ui-monospace, monospace;
+  letter-spacing: -1px;
+  color: #ff5a6e;
+}
+
+#ti-hover-card .ti-verdict {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+#ti-hover-card .ti-verdict-bad { background: rgba(255, 60, 90, 0.15); color: #ff8fa0; border: 1px solid rgba(255, 60, 90, 0.4); }
+#ti-hover-card .ti-verdict-warn { background: rgba(255, 170, 60, 0.15); color: #ffcc7a; border: 1px solid rgba(255, 170, 60, 0.4); }
+#ti-hover-card .ti-verdict-good { background: rgba(80, 220, 140, 0.12); color: #94eabc; border: 1px solid rgba(80, 220, 140, 0.35); }
+#ti-hover-card .ti-verdict-muted { background: rgba(120, 140, 160, 0.10); color: #a5b7c8; border: 1px solid rgba(120, 140, 160, 0.30); }
+
+#ti-hover-card .ti-desc {
+  color: #a5b7c8;
+  font-size: 11px;
+  padding: 4px 0 0;
+  line-height: 1.4;
+}
+
+#ti-hover-card .ti-hc-actions {
+  display: flex;
+  gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+#ti-hover-card .ti-hc-actions button {
+  background: rgba(0, 229, 255, 0.08);
+  color: #cceffd;
+  border: 1px solid rgba(0, 229, 255, 0.20);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 140ms ease;
+}
+#ti-hover-card .ti-hc-actions button:hover {
+  background: rgba(0, 229, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(0, 229, 255, 0.45);
+}
+
+#ti-hover-card .ti-hc-loading {
+  color: #7c8ea3;
+  font-style: italic;
+  padding: 6px 0;
+}
+#ti-hover-card .ti-dots i {
+  display: inline-block;
+  width: 4px; height: 4px;
+  background: #00e5ff;
+  border-radius: 50%;
+  margin: 0 1px;
+  animation: ti-blink 1s infinite;
+}
+#ti-hover-card .ti-dots i:nth-child(2) { animation-delay: 0.15s; }
+#ti-hover-card .ti-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ti-blink { 0%,80%,100% {opacity: 0.2;} 40% {opacity: 1;} }
+
+#ti-hover-card .ti-hc-err {
+  color: #ff8fa0;
+  font-size: 11px;
+  padding: 4px 0;
+}

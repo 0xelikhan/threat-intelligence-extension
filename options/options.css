@@ -1,0 +1,189 @@
+:root {
+  --bg-0: #07090d;
+  --bg-1: #0c1118;
+  --bg-2: #131a24;
+  --bg-3: #1a2331;
+  --line: rgba(255,255,255,0.06);
+  --line-strong: rgba(255,255,255,0.12);
+  --fg: #e6f1ff;
+  --fg-dim: #8ea1b6;
+  --fg-muted: #5b6b7f;
+  --accent: #00e5ff;
+  --accent-2: #7bffcf;
+  --bad: #ff5a6e;
+  --good: #62e59a;
+  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-0);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+}
+body {
+  background:
+    radial-gradient(1200px 500px at 50% -200px, rgba(0,229,255,0.06), transparent 60%),
+    var(--bg-0);
+}
+
+.ti-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 96px;
+}
+
+.ti-header {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.ti-logo {
+  font-size: 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0,229,255,0.4));
+}
+.ti-title { font-size: 15px; font-weight: 600; letter-spacing: 0.03em; }
+
+.ti-section {
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.ti-section h2 {
+  margin: 0 0 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.ti-field {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+}
+.ti-field label {
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.ti-field input {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+}
+.ti-field input:focus { border-color: rgba(0,229,255,0.5); }
+.ti-hint {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 4px;
+}
+.ti-hint:hover { background: rgba(0,229,255,0.08); }
+
+.ti-switch {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.ti-switch input {
+  width: 32px; height: 18px;
+  appearance: none;
+  background: var(--bg-3);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.ti-switch input::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  transition: transform 150ms, background 150ms;
+}
+.ti-switch input:checked { background: rgba(0,229,255,0.25); }
+.ti-switch input:checked::after {
+  transform: translateX(14px);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(0,229,255,0.6);
+}
+.ti-switch span { font-size: 12.5px; color: var(--fg); }
+
+.ti-custom {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 140px auto;
+  gap: 6px;
+  padding: 4px 0;
+}
+.ti-custom input {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  outline: none;
+  min-width: 0;
+}
+.ti-custom .c-remove {
+  background: transparent; color: var(--fg-muted); border: 1px solid var(--line);
+  border-radius: 5px; padding: 4px 8px; cursor: pointer;
+}
+.ti-custom .c-remove:hover { color: var(--bad); border-color: var(--bad); }
+
+button {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 150ms;
+}
+button:hover { background: var(--bg-3); border-color: var(--line-strong); }
+button.primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #061116; font-weight: 700; border: 0;
+  padding: 8px 20px;
+}
+button.primary:hover { filter: brightness(1.1); }
+button.ghost { background: transparent; }
+button.danger { color: var(--bad); border-color: rgba(255,90,110,0.25); }
+button.danger:hover { background: rgba(255,90,110,0.08); }
+
+.ti-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.ti-save-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 12px 20px;
+  background: rgba(7,9,13,0.9);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; gap: 12px;
+}
+.ti-saved { color: var(--good); font-size: 12px; font-weight: 600; }

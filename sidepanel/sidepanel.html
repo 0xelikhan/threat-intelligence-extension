@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Threat Intelligence</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header class="ti-header">
+    <div class="ti-brand">
+      <span class="ti-logo">◇</span>
+      <span class="ti-title">Threat Intelligence</span>
+    </div>
+    <div class="ti-actions">
+      <button id="rescan" title="Rescan tab">↻</button>
+      <button id="settings-btn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <section class="ti-search">
+    <textarea id="pastebox" placeholder="Paste IOC or text" spellcheck="false"></textarea>
+    <div class="ti-search-actions">
+      <button id="parse-btn" class="primary">Enrich</button>
+      <button id="scan-page-btn">Scan Page</button>
+      <button id="clear-btn" class="ghost">Clear</button>
+    </div>
+  </section>
+
+  <section class="ti-filters">
+    <label class="ti-chip"><input type="checkbox" data-filter="ipv4" checked><span>IP</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="domain" checked><span>Domain</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="url" checked><span>URL</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="sha256" checked><span>Hash</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="email" checked><span>Email</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="cve" checked><span>CVE</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="mitre" checked><span>MITRE</span></label>
+    <label class="ti-chip"><input type="checkbox" data-filter="other" checked><span>Other</span></label>
+  </section>
+
+  <section class="ti-toolbar">
+    <div class="ti-count"><span id="ioc-count">0</span></div>
+    <div class="ti-toolbar-actions">
+      <button id="enrich-all">Enrich All</button>
+      <button id="copy-report">Report</button>
+      <button id="send-copilot">Copilot</button>
+      <button id="save-case">Case</button>
+    </div>
+  </section>
+
+  <main id="ioc-list" class="ti-list"></main>
+
+  <section id="case-drawer" class="ti-case-drawer" hidden>
+    <div class="ti-case-head">
+      <span>Case (<span id="case-count">0</span>)</span>
+      <div>
+        <button id="case-export">Export</button>
+        <button id="case-clear">Clear</button>
+        <button id="case-close">×</button>
+      </div>
+    </div>
+    <div id="case-list" class="ti-case-list"></div>
+  </section>
+
+  <div id="toast" class="ti-toast" hidden></div>
+
+  <script src="../lib/parser.js"></script>
+  <script src="../lib/markdown.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Threat Intelligence Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="ti-wrap">
+    <header class="ti-header">
+      <span class="ti-logo">◇</span>
+      <span class="ti-title">Threat Intelligence</span>
+    </header>
+
+    <section class="ti-section">
+      <h2>API Keys</h2>
+      <div class="ti-field">
+        <label>VirusTotal</label>
+        <input id="vt" type="password" autocomplete="off" spellcheck="false">
+        <a class="ti-hint" href="https://www.virustotal.com/gui/my-apikey" target="_blank" rel="noopener">Get key</a>
+      </div>
+      <div class="ti-field">
+        <label>AbuseIPDB</label>
+        <input id="aipb" type="password" autocomplete="off" spellcheck="false">
+        <a class="ti-hint" href="https://www.abuseipdb.com/account/api" target="_blank" rel="noopener">Get key</a>
+      </div>
+      <div class="ti-field">
+        <label>GreyNoise</label>
+        <input id="gn" type="password" autocomplete="off" spellcheck="false">
+        <a class="ti-hint" href="https://viz.greynoise.io/account/api-key" target="_blank" rel="noopener">Get key</a>
+      </div>
+    </section>
+
+    <section class="ti-section">
+      <h2>Custom Sources</h2>
+      <div id="custom-list"></div>
+      <button id="add-custom" class="ghost">+ Add</button>
+    </section>
+
+    <section class="ti-section">
+      <h2>Behavior</h2>
+      <label class="ti-switch">
+        <input id="autoscan" type="checkbox">
+        <span>Auto-scan pages</span>
+      </label>
+      <label class="ti-switch">
+        <input id="hover" type="checkbox">
+        <span>Hover tooltips</span>
+      </label>
+      <label class="ti-switch">
+        <input id="private-ips" type="checkbox">
+        <span>Skip private IPs</span>
+      </label>
+      <label class="ti-switch">
+        <input id="known-tld" type="checkbox">
+        <span>Require known TLD</span>
+      </label>
+      <label class="ti-switch">
+        <input id="defang-copy" type="checkbox">
+        <span>Defang on copy</span>
+      </label>
+    </section>
+
+    <section class="ti-section">
+      <h2>Data</h2>
+      <div class="ti-buttons">
+        <button id="export-cfg">Export config</button>
+        <button id="import-cfg">Import config</button>
+        <button id="clear-case" class="danger">Clear case notes</button>
+      </div>
+      <input id="import-file" type="file" accept="application/json" hidden>
+    </section>
+
+    <div class="ti-save-bar">
+      <button id="save" class="primary">Save</button>
+      <span id="saved" class="ti-saved" hidden>Saved</span>
+    </div>
+  </div>
+
+  <template id="custom-tpl">
+    <div class="ti-custom">
+      <input class="c-name" placeholder="Name" spellcheck="false">
+      <input class="c-url" placeholder="https://api.example.com/lookup/{ioc}" spellcheck="false">
+      <input class="c-header" placeholder="X-Api-Key" spellcheck="false">
+      <input class="c-key" type="password" placeholder="key" autocomplete="off" spellcheck="false">
+      <button class="c-remove">×</button>
+    </div>
+  </template>
+
+  <script src="options.js"></script>
+</body>
+</html>
