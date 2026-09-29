@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TI Test Alert</title>
+<style>
+  body { font-family: Segoe UI, sans-serif; max-width: 780px; margin: 40px auto; padding: 20px; background: #f4f6f9; color: #222; }
+  .card { background: #fff; border: 1px solid #dde; border-radius: 8px; padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  h1 { font-size: 18px; margin-top: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; color: #667; letter-spacing: 0.08em; margin-bottom: 6px; }
+  pre { background: #0e1218; color: #d5f4ff; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+  code { background: #eef; padding: 1px 4px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Simulated Alert — External Beacon</h1>
+
+<div class="card">
+  <h2>Source IPs</h2>
+  <p>Outbound to <code>45.129.14.88</code>, <code>185.220.101.34</code>, and defanged <code>91[.]219[.]236[.]222</code>.
+  Also seen from IPv6 <code>2001:db8:85a3::8a2e:370:7334</code>. Internal host 10.0.4.5 (should be filtered).</p>
+</div>
+
+<div class="card">
+  <h2>Suspicious Domains / URLs</h2>
+  <p>Callback to <code>malware-c2.tk</code>, <code>update-server[.]xyz</code>, and <code>hxxps://evil-domain[.]com/beacon</code>.
+  User visited <code>google.com</code> before the incident.</p>
+</div>
+
+<div class="card">
+  <h2>File Hashes</h2>
+  <pre>SHA256: 44d88612fea8a8f36de82e1278abb02f
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+SHA1:   da39a3ee5e6b4b0d3255bfef95601890afd80709
+MD5:    d41d8cd98f00b204e9800998ecf8427e</pre>
+</div>
+
+<div class="card">
+  <h2>User / Identity</h2>
+  <p>Attacker phishing: <code>attacker@evil-domain.com</code>, victim account <code>j.smith@contoso.com</code>.</p>
+</div>
+
+<div class="card">
+  <h2>Vulnerabilities / TTPs</h2>
+  <p>Exploited <code>CVE-2024-3400</code> and <code>CVE-2023-46805</code>. Techniques: <code>T1059.001</code> (PowerShell), <code>T1071.001</code> (Web Protocols). Tactic: <code>TA0011</code>.</p>
+</div>
+
+<div class="card">
+  <h2>Host Artifacts</h2>
+  <p>Persistence: <code>HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run</code>.
+  Dropper path: <code>C:\Users\Public\Documents\svc_host.exe</code>.</p>
+</div>
+
+</body>
+</html>

@@ -1,27 +1,21 @@
 /*
- * Threat Intelligence — side panel
+ * Threat Intelligence: side panel
  */
 (function () {
   'use strict';
 
   const state = {
-    iocs: [],            // parsed IOCs
-    enrichments: {},     // key: `${type}:${value}` -> enrichment
-    filters: new Set(['ipv4', 'ipv6', 'domain', 'url', 'sha256', 'sha1', 'md5', 'email', 'cve', 'mitre_technique', 'mitre_tactic', 'registry', 'filepath']),
+    iocs: [],
+    enrichments: {},
     pageUrl: '',
-    caseNotes: [],
   };
 
   const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
   document.addEventListener('DOMContentLoaded', init);
 
-  async function init() {
+  function init() {
     bindUi();
-    await loadCase();
-    renderCase();
-    // Listen for text injected via context menu / hover pin
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg?.type === 'SIDEPANEL_ADD_TEXT' && typeof msg.text === 'string') {
         $('#pastebox').value = ($('#pastebox').value + '\n' + msg.text).trim();
@@ -39,42 +33,21 @@
       state.iocs = []; state.enrichments = {};
       render();
     });
-    $('#enrich-all').addEventListener('click', enrichAll);
     $('#copy-report').addEventListener('click', copyReport);
-    $('#send-copilot').addEventListener('click', sendCopilot);
-    $('#save-case').addEventListener('click', addAllToCase);
+    $('#send-copilot').addEventListener('click', openCopilotModal);
     $('#settings-btn').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
-    $$('.ti-filters input').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const f = cb.dataset.filter;
-        if (cb.checked) {
-          if (f === 'sha256') { state.filters.add('sha256'); state.filters.add('sha1'); state.filters.add('md5'); }
-          else if (f === 'mitre') { state.filters.add('mitre_technique'); state.filters.add('mitre_tactic'); }
-          else if (f === 'other') { state.filters.add('registry'); state.filters.add('filepath'); }
-          else state.filters.add(f);
-        } else {
-          if (f === 'sha256') { state.filters.delete('sha256'); state.filters.delete('sha1'); state.filters.delete('md5'); }
-          else if (f === 'mitre') { state.filters.delete('mitre_technique'); state.filters.delete('mitre_tactic'); }
-          else if (f === 'other') { state.filters.delete('registry'); state.filters.delete('filepath'); }
-          else state.filters.delete(f);
-        }
-        render();
-      });
+    $('#modal-close').addEventListener('click', closeModal);
+    $('.ti-modal-backdrop').addEventListener('click', closeModal);
+    $('#modal-copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#modal-prompt').value);
+      toast('Copied');
     });
-
-    $('#case-close').addEventListener('click', () => { $('#case-drawer').hidden = true; });
-    $('#case-clear').addEventListener('click', async () => {
-      state.caseNotes = [];
-      await chrome.storage.local.set({ caseNotes: [] });
-      renderCase();
-    });
-    $('#case-export').addEventListener('click', async () => {
-      if (!state.caseNotes.length) return toast('Case is empty');
-      const enrichments = state.caseNotes;
-      const md = SOCReport.buildMarkdown(enrichments, { pageUrl: '' });
-      await navigator.clipboard.writeText(md);
-      toast('Case report copied');
+    $('#modal-copy-open').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#modal-prompt').value);
+      chrome.tabs.create({ url: 'https://copilot.microsoft.com/' });
+      toast('Copied, paste with Ctrl+V');
+      closeModal();
     });
 
     $('#pastebox').addEventListener('keydown', (e) => {
@@ -104,7 +77,7 @@
       });
       text = result || '';
     } catch (e) {
-      toast('Cannot read page: ' + (e.message || 'permission'));
+      toast('Cannot read page');
       return;
     }
     const iocs = SOCParser.extract(text, { excludePrivateIPs: true, requireKnownTLD: true });
@@ -129,7 +102,6 @@
   async function enrichAll() {
     const targets = state.iocs.filter(i => !state.enrichments[key(i)]);
     if (!targets.length) return;
-    // Batched to avoid rate limits
     const chunkSize = 5;
     for (let i = 0; i < targets.length; i += chunkSize) {
       const chunk = targets.slice(i, i + chunkSize);
@@ -146,69 +118,32 @@
   async function copyReport() {
     if (!state.iocs.length) return toast('Nothing to report');
     const enrichments = state.iocs.map(i => state.enrichments[key(i)]).filter(Boolean);
-    if (!enrichments.length) return toast('Nothing enriched yet');
+    if (!enrichments.length) return toast('Enrich first');
     const md = SOCReport.buildMarkdown(enrichments, { pageUrl: state.pageUrl });
     await navigator.clipboard.writeText(md);
     toast('Report copied');
   }
 
-  async function sendCopilot() {
+  function openCopilotModal() {
     if (!state.iocs.length) return toast('Nothing to send');
     const enrichments = state.iocs.map(i => state.enrichments[key(i)]).filter(Boolean);
     if (!enrichments.length) return toast('Enrich first');
     const prompt = SOCReport.buildCopilotPrompt(enrichments, { pageUrl: state.pageUrl });
-    await navigator.clipboard.writeText(prompt);
-    chrome.runtime.sendMessage({ type: 'OPEN_COPILOT', prompt });
-    toast('Prompt copied, opening Copilot');
+    $('#modal-prompt').value = prompt;
+    $('#modal').hidden = false;
+    setTimeout(() => $('#modal-prompt').focus(), 50);
   }
 
-  async function addAllToCase() {
-    const enrichments = state.iocs.map(i => state.enrichments[key(i)]).filter(Boolean);
-    if (!enrichments.length) return toast('Nothing to pin');
-    const existingKeys = new Set(state.caseNotes.map(e => key(e.ioc)));
-    for (const e of enrichments) if (!existingKeys.has(key(e.ioc))) state.caseNotes.push(e);
-    await chrome.storage.local.set({ caseNotes: state.caseNotes });
-    renderCase();
-    $('#case-drawer').hidden = false;
-    toast(`Pinned ${enrichments.length}`);
-  }
-
-  async function loadCase() {
-    const { caseNotes = [] } = await chrome.storage.local.get('caseNotes');
-    state.caseNotes = caseNotes;
-  }
-
-  function renderCase() {
-    $('#case-count').textContent = state.caseNotes.length;
-    const list = $('#case-list');
-    list.innerHTML = '';
-    for (const e of state.caseNotes) {
-      const row = document.createElement('div');
-      row.className = 'ti-case-row';
-      row.innerHTML = `
-        <span class="ti-case-type">${e.ioc.type}</span>
-        <span class="ti-case-value">${escapeHtml(e.ioc.value)}</span>
-        <button class="ti-case-remove" title="Remove">×</button>
-      `;
-      row.querySelector('.ti-case-remove').addEventListener('click', async () => {
-        state.caseNotes = state.caseNotes.filter(x => key(x.ioc) !== key(e.ioc));
-        await chrome.storage.local.set({ caseNotes: state.caseNotes });
-        renderCase();
-      });
-      list.appendChild(row);
-    }
-  }
+  function closeModal() { $('#modal').hidden = true; }
 
   function render() {
-    const filtered = state.iocs.filter(i => state.filters.has(i.type));
-    $('#ioc-count').textContent = filtered.length;
+    $('#ioc-count').textContent = state.iocs.length;
     const container = $('#ioc-list');
     container.innerHTML = '';
-    if (!filtered.length) return;
+    if (!state.iocs.length) return;
 
-    // Group by type
     const groups = new Map();
-    for (const i of filtered) {
+    for (const i of state.iocs) {
       if (!groups.has(i.type)) groups.set(i.type, []);
       groups.get(i.type).push(i);
     }
@@ -219,9 +154,7 @@
       const groupEl = document.createElement('div');
       groupEl.className = 'ti-group';
       groupEl.innerHTML = `<div class="ti-group-head">${type} (${groups.get(type).length})</div>`;
-      for (const ioc of groups.get(type)) {
-        groupEl.appendChild(renderCard(ioc));
-      }
+      for (const ioc of groups.get(type)) groupEl.appendChild(renderCard(ioc));
       container.appendChild(groupEl);
     }
   }
@@ -244,7 +177,6 @@
         <div class="ti-card-actions">
           <button data-act="copy" title="Copy">⧉</button>
           <button data-act="defang" title="Defang">◈</button>
-          <button data-act="pin" title="Pin to case">📌</button>
           <button data-act="expand" title="Expand">▾</button>
         </div>
       </div>
@@ -254,27 +186,22 @@
     if (enriched) renderCardBody(card.querySelector('.ti-card-body'), enriched);
     else card.querySelector('.ti-card-body').innerHTML = `<div class="ti-loading"><span class="ti-dots"><i></i><i></i><i></i></span></div>`;
 
-    card.querySelector('[data-act="copy"]').addEventListener('click', async () => {
+    card.querySelector('[data-act="copy"]').addEventListener('click', async (ev) => {
+      ev.stopPropagation();
       await navigator.clipboard.writeText(ioc.value);
       toast('Copied');
     });
-    card.querySelector('[data-act="defang"]').addEventListener('click', async () => {
+    card.querySelector('[data-act="defang"]').addEventListener('click', async (ev) => {
+      ev.stopPropagation();
       await navigator.clipboard.writeText(SOCParser.defang(ioc.value));
       toast('Defanged');
     });
-    card.querySelector('[data-act="pin"]').addEventListener('click', async () => {
-      if (!enriched) return toast('Not enriched');
-      const existing = new Set(state.caseNotes.map(e => key(e.ioc)));
-      if (!existing.has(key(ioc))) {
-        state.caseNotes.push(enriched);
-        await chrome.storage.local.set({ caseNotes: state.caseNotes });
-        renderCase();
-        toast('Pinned');
-      } else {
-        toast('Already pinned');
-      }
+    card.querySelector('[data-act="expand"]').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      card.classList.toggle('expanded');
     });
-    card.querySelector('[data-act="expand"]').addEventListener('click', () => {
+    card.querySelector('.ti-card-head').addEventListener('click', (ev) => {
+      if (ev.target.closest('button')) return;
       card.classList.toggle('expanded');
     });
     return card;
@@ -333,7 +260,6 @@
       if (r.nvd.description) rows.push(`<div class="ti-desc">${escapeHtml(r.nvd.description.slice(0, 400))}</div>`);
     }
 
-    // Errors
     Object.entries(r).forEach(([k, v]) => {
       if (v?.error) rows.push(`<div class="ti-row-err">${escapeHtml(k)}: ${escapeHtml(v.error)}</div>`);
     });

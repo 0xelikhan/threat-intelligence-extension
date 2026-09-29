@@ -26,40 +26,30 @@
     </div>
   </section>
 
-  <section class="ti-filters">
-    <label class="ti-chip"><input type="checkbox" data-filter="ipv4" checked><span>IP</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="domain" checked><span>Domain</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="url" checked><span>URL</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="sha256" checked><span>Hash</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="email" checked><span>Email</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="cve" checked><span>CVE</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="mitre" checked><span>MITRE</span></label>
-    <label class="ti-chip"><input type="checkbox" data-filter="other" checked><span>Other</span></label>
-  </section>
-
   <section class="ti-toolbar">
-    <div class="ti-count"><span id="ioc-count">0</span></div>
+    <div class="ti-count"><span id="ioc-count">0</span> IOCs</div>
     <div class="ti-toolbar-actions">
-      <button id="enrich-all">Enrich All</button>
       <button id="copy-report">Report</button>
-      <button id="send-copilot">Copilot</button>
-      <button id="save-case">Case</button>
+      <button id="send-copilot" class="primary-ghost">Copilot</button>
     </div>
   </section>
 
   <main id="ioc-list" class="ti-list"></main>
 
-  <section id="case-drawer" class="ti-case-drawer" hidden>
-    <div class="ti-case-head">
-      <span>Case (<span id="case-count">0</span>)</span>
-      <div>
-        <button id="case-export">Export</button>
-        <button id="case-clear">Clear</button>
-        <button id="case-close">×</button>
+  <div id="modal" class="ti-modal" hidden>
+    <div class="ti-modal-backdrop"></div>
+    <div class="ti-modal-card">
+      <div class="ti-modal-head">
+        <span>Copilot Prompt</span>
+        <button id="modal-close">×</button>
+      </div>
+      <textarea id="modal-prompt" spellcheck="false"></textarea>
+      <div class="ti-modal-actions">
+        <button id="modal-copy">Copy</button>
+        <button id="modal-copy-open" class="primary">Copy &amp; Open Copilot</button>
       </div>
     </div>
-    <div id="case-list" class="ti-case-list"></div>
-  </section>
+  </div>
 
   <div id="toast" class="ti-toast" hidden></div>
 
