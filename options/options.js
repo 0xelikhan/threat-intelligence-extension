@@ -13,6 +13,11 @@
     $('#vt').value = s.apiKeys.virustotal || '';
     $('#aipb').value = s.apiKeys.abuseipdb || '';
     $('#gn').value = s.apiKeys.greynoise || '';
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx'];
+    for (const k of extraKeys) {
+      const el = document.getElementById(k);
+      if (el) el.value = s.apiKeys[k] || '';
+    }
     $('#autoscan').checked = !!s.behavior.autoScanOnLoad;
     $('#hover').checked = !!s.behavior.hoverTooltipsEnabled;
     $('#private-ips').checked = !!s.behavior.excludePrivateIPs;
@@ -53,13 +58,19 @@
       key: el.querySelector('.c-key').value.trim(),
     })).filter(c => c.name && c.url);
 
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx'];
+    const apiKeys = {
+      virustotal: $('#vt').value.trim(),
+      abuseipdb: $('#aipb').value.trim(),
+      greynoise: $('#gn').value.trim(),
+      custom,
+    };
+    for (const k of extraKeys) {
+      const el = document.getElementById(k);
+      if (el) apiKeys[k] = el.value.trim();
+    }
     const settings = {
-      apiKeys: {
-        virustotal: $('#vt').value.trim(),
-        abuseipdb: $('#aipb').value.trim(),
-        greynoise: $('#gn').value.trim(),
-        custom,
-      },
+      apiKeys,
       behavior: {
         autoScanOnLoad: $('#autoscan').checked,
         hoverTooltipsEnabled: $('#hover').checked,

@@ -368,6 +368,84 @@
       if (r.nvd.description) rows.push(`<div class="ti-desc">${escapeHtml(r.nvd.description.slice(0, 400))}</div>`);
     }
 
+    // ─── New sources ────────────────────────────────────────────────────
+    if (r.proxycheck && !r.proxycheck.error) {
+      const p = r.proxycheck;
+      const flags = [];
+      if (p.proxy) flags.push('proxy');
+      if (p.vpn) flags.push('VPN');
+      if (p.type) flags.push(p.type);
+      rows.push(kv('ProxyCheck', `risk ${p.riskScore ?? '?'}${flags.length ? ' · ' + flags.join(', ') : ''}${p.provider ? ' · ' + p.provider : ''}`, p.link));
+    }
+    if (r.ipinfo && !r.ipinfo.error) {
+      const i = r.ipinfo;
+      rows.push(kv('IPInfo', `${i.city || ''}, ${i.region || ''} ${i.country || ''}${i.org ? ' · ' + i.org : ''}`, i.link));
+      if (i.privacy) {
+        const flags = Object.entries(i.privacy).filter(([k, v]) => v === true).map(([k]) => k);
+        if (flags.length) rows.push(kv('IPInfo flags', flags.join(', ')));
+      }
+    }
+    if (r.shodan && !r.shodan.error) {
+      if (r.shodan.notFound) rows.push(kv('Shodan', 'not indexed', r.shodan.link));
+      else {
+        const s = r.shodan;
+        rows.push(kv('Shodan', `${(s.ports || []).join(', ')}${s.os ? ' · ' + s.os : ''}${s.org ? ' · ' + s.org : ''}`, s.link));
+        if (s.vulns?.length) rows.push(kv('Shodan vulns', (Array.isArray(s.vulns) ? s.vulns.slice(0, 6) : Object.keys(s.vulns).slice(0, 6)).join(', ')));
+      }
+    }
+    if (r.otx && !r.otx.error) {
+      if (r.otx.notFound || r.otx.pulseCount === 0) rows.push(kv('OTX', 'no pulses', r.otx.link));
+      else {
+        const o = r.otx;
+        rows.push(kv('OTX', `${o.pulseCount} pulses`, o.link));
+        if (o.pulses?.length) {
+          const names = o.pulses.slice(0, 3).map(p => p.name).filter(Boolean);
+          if (names.length) rows.push(kv('OTX top', names.join(' · ')));
+        }
+      }
+    }
+    if (r.urlscan && !r.urlscan.error) {
+      const u = r.urlscan;
+      const verdict = u.malicious ? '🔴 malicious' : (u.total > 0 ? '🟢 clean history' : 'no scans');
+      rows.push(kv('URLScan', `${u.total || 0} scans · ${verdict}`, u.link));
+    }
+    if (r.crowdsec && !r.crowdsec.error && !r.crowdsec.notFound) {
+      const c = r.crowdsec;
+      const beh = (c.behaviors || []).slice(0, 3).join(', ');
+      rows.push(kv('CrowdSec', `${c.reputation || '?'}${c.confidence ? ' · ' + c.confidence : ''}${beh ? ' · ' + beh : ''}`, c.link));
+    }
+    if (r.pulsedive && !r.pulsedive.error && !r.pulsedive.notFound) {
+      const p = r.pulsedive;
+      const threats = (p.threats || []).slice(0, 3).join(', ');
+      rows.push(kv('Pulsedive', `risk: ${p.risk || '?'}${threats ? ' · ' + threats : ''}`, p.link));
+    }
+    if (r.censys && !r.censys.error && !r.censys.notFound) {
+      const c = r.censys;
+      const ports = (c.services || []).map(s => s.port).join(', ');
+      rows.push(kv('Censys', `${ports || 'no services'}${c.os ? ' · ' + c.os : ''}`, c.link));
+    }
+    if (r.hybridAnalysis && !r.hybridAnalysis.error && !r.hybridAnalysis.notFound) {
+      const h = r.hybridAnalysis;
+      const dot = h.threatLevel >= 2 ? '🔴' : h.threatLevel === 1 ? '🟠' : '🟢';
+      rows.push(kv('HybridAnalysis', `${dot} ${h.verdict || '?'}${h.threatScore != null ? ' · score ' + h.threatScore : ''}${h.threatLabel ? ' · ' + h.threatLabel : ''}`, h.link));
+    }
+    if (r.anyrun && !r.anyrun.error && r.anyrun.count > 0) {
+      const a = r.anyrun;
+      const verdicts = a.tasks.slice(0, 3).map(t => t.verdict || t.malwareFamily || 'unknown').filter(Boolean);
+      rows.push(kv('Any.Run', `${a.count} tasks${verdicts.length ? ' · ' + verdicts.join(', ') : ''}`, a.link));
+    }
+    if (r.fullhunt && !r.fullhunt.error && !r.fullhunt.notFound) {
+      const f = r.fullhunt;
+      rows.push(kv('FullHunt', `${f.subdomainsCount || 0} subdomains${f.ports?.length ? ' · ports: ' + f.ports.slice(0, 6).join(', ') : ''}`, f.link));
+    }
+    if (r.polyswarm && !r.polyswarm.error && !r.polyswarm.notFound) {
+      const p = r.polyswarm;
+      rows.push(kv('Polyswarm', `score: ${p.polyscore ?? '?'}${p.mimetype ? ' · ' + p.mimetype : ''}`, p.link));
+    }
+    if (r.intelx && !r.intelx.error && !r.intelx.notFound && r.intelx.total > 0) {
+      rows.push(kv('IntelX', `${r.intelx.total} hits`, r.intelx.link));
+    }
+
     Object.entries(r).forEach(([k, v]) => {
       if (v?.error) rows.push(`<div class="ti-row-err">${escapeHtml(k)}: ${escapeHtml(v.error)}</div>`);
     });
