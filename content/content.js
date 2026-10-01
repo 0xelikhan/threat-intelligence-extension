@@ -11,8 +11,10 @@
     iocs: [],
     hoverEl: null,
     hoverAnchor: null,
-    highlightWrappers: new WeakSet(),
+    processedNodes: new WeakSet(),
     scanTimer: null,
+    isWrapping: false,
+    mo: null,
   };
 
   // Skip if we're inside a chrome-extension or edge://
@@ -27,25 +29,44 @@
 
     if (state.settings.behavior.autoScanOnLoad) {
       scheduleScan();
-      const mo = new MutationObserver(() => scheduleScan());
-      mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+      // Only observe childList — characterData fires on every text tick in log viewers
+      state.mo = new MutationObserver((mutations) => {
+        if (state.isWrapping) return;
+        // Only react to added nodes with actual content
+        for (const m of mutations) {
+          if (m.type === 'childList' && m.addedNodes.length > 0) {
+            scheduleScan();
+            return;
+          }
+        }
+      });
+      state.mo.observe(document.body, { childList: true, subtree: true });
     }
   }
 
   function scheduleScan() {
     clearTimeout(state.scanTimer);
-    state.scanTimer = setTimeout(scanAndHighlight, 400);
+    state.scanTimer = setTimeout(scanAndHighlight, 1200);
+  }
+
+  function hasActiveSelection() {
+    const sel = window.getSelection();
+    return !!(sel && !sel.isCollapsed && sel.toString().length > 0);
   }
 
   async function scanAndHighlight() {
     if (!state.settings?.behavior?.hoverTooltipsEnabled) return;
+    // Never mutate DOM while the user has an active selection
+    if (hasActiveSelection()) {
+      state.scanTimer = setTimeout(scanAndHighlight, 1500);
+      return;
+    }
     const text = document.body.innerText || '';
     const iocs = SOCParser.extract(text, {
       excludePrivateIPs: state.settings.behavior.excludePrivateIPs,
       requireKnownTLD: state.settings.behavior.requireKnownTLD,
     });
     state.iocs = iocs;
-    // Publish count to the badge (optional)
     chrome.runtime.sendMessage({ type: 'PAGE_IOC_COUNT', count: iocs.length }).catch(() => {});
     highlightMatches(iocs);
   }
@@ -63,12 +84,14 @@
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
+        if (state.processedNodes.has(node)) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         const tag = parent.tagName;
         if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
         if (parent.classList.contains('ti-ioc')) return NodeFilter.FILTER_REJECT;
         if (parent.closest('[data-ti-skip]')) return NodeFilter.FILTER_REJECT;
+        if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
         if (!node.nodeValue || node.nodeValue.length < 4) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       },
@@ -76,43 +99,56 @@
 
     const targets = [];
     let n; let count = 0;
-    while ((n = walker.nextNode()) && count < 3000) {
+    while ((n = walker.nextNode()) && count < 2000) {
       re.lastIndex = 0;
       if (re.test(n.nodeValue)) {
         targets.push(n);
         count++;
+      } else {
+        state.processedNodes.add(n);
       }
     }
 
-    for (const node of targets) {
-      const text = node.nodeValue;
-      re.lastIndex = 0;
-      const frag = document.createDocumentFragment();
-      let lastIndex = 0;
-      let match;
-      let hadMatch = false;
-      while ((match = re.exec(text)) !== null) {
-        hadMatch = true;
-        const start = match.index;
-        const value = match[0];
-        const type = valueToType.get(value) || 'unknown';
-        if (start > lastIndex) {
-          frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+    if (!targets.length) return;
+
+    // Suppress MutationObserver re-entry during our own writes
+    state.isWrapping = true;
+    try {
+      for (const node of targets) {
+        // Re-check selection on each node — bail mid-scan if user starts selecting
+        if (hasActiveSelection()) break;
+        const text = node.nodeValue;
+        re.lastIndex = 0;
+        const frag = document.createDocumentFragment();
+        let lastIndex = 0;
+        let match;
+        let hadMatch = false;
+        while ((match = re.exec(text)) !== null) {
+          hadMatch = true;
+          const start = match.index;
+          const value = match[0];
+          const type = valueToType.get(value) || 'unknown';
+          if (start > lastIndex) {
+            frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+          }
+          const span = document.createElement('span');
+          span.className = `ti-ioc ti-ioc-${type}`;
+          span.textContent = value;
+          span.dataset.tiType = type;
+          span.dataset.tiValue = value;
+          span.tabIndex = 0;
+          frag.appendChild(span);
+          lastIndex = start + value.length;
         }
-        const span = document.createElement('span');
-        span.className = `ti-ioc ti-ioc-${type}`;
-        span.textContent = value;
-        span.dataset.tiType = type;
-        span.dataset.tiValue = value;
-        span.tabIndex = 0;
-        frag.appendChild(span);
-        lastIndex = start + value.length;
+        if (!hadMatch) { state.processedNodes.add(node); continue; }
+        if (lastIndex < text.length) {
+          frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+        try { node.parentNode?.replaceChild(frag, node); } catch (_) {}
       }
-      if (!hadMatch) continue;
-      if (lastIndex < text.length) {
-        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-      }
-      try { node.parentNode?.replaceChild(frag, node); } catch (_) {}
+    } finally {
+      // Let the browser settle before re-enabling the observer
+      setTimeout(() => { state.isWrapping = false; }, 150);
     }
   }
 
@@ -174,11 +210,16 @@
 
     document.addEventListener('mouseover', onHoverEnter, true);
     document.addEventListener('mouseout', onHoverLeave, true);
+    // Hide the card on mousedown so it never interferes with click-drag selection
+    document.addEventListener('mousedown', (ev) => {
+      if (state.hoverEl && !state.hoverEl.contains(ev.target)) hideCard();
+    }, true);
   }
 
   function onHoverEnter(ev) {
     const target = ev.target;
     if (!target || !target.classList || !target.classList.contains('ti-ioc')) return;
+    if (hasActiveSelection()) return; // never pop while user is selecting text
     clearTimeout(state.hideTimer);
     state.hoverAnchor = target;
     positionCard(target);
