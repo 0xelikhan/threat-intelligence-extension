@@ -140,6 +140,40 @@
     </section>
 
     <section class="ti-section">
+      <h2>Tooltip Indicator Types</h2>
+      <div class="ti-buttons ti-bulk">
+        <button class="ghost" data-bulk="tooltip-types" data-on="1">All on</button>
+        <button class="ghost" data-bulk="tooltip-types" data-on="0">All off</button>
+      </div>
+      <div id="tooltip-types" class="ti-type-grid"></div>
+    </section>
+
+    <section class="ti-section">
+      <h2>Side Panel Indicator Types</h2>
+      <label class="ti-switch">
+        <input id="sp-use-tooltip" type="checkbox">
+        <span>Use tooltip types for Scan Page</span>
+      </label>
+      <div id="sp-types-wrap" hidden>
+        <div class="ti-buttons ti-bulk">
+          <button class="ghost" data-bulk="sidepanel-types" data-on="1">All on</button>
+          <button class="ghost" data-bulk="sidepanel-types" data-on="0">All off</button>
+        </div>
+        <div id="sidepanel-types" class="ti-type-grid"></div>
+      </div>
+    </section>
+
+    <section class="ti-section">
+      <h2>Enrichment Sources</h2>
+      <p class="ti-note">Free sources, plus any source with a key entered above.</p>
+      <div class="ti-buttons ti-bulk">
+        <button class="ghost" data-bulk="source-list" data-on="1">All on</button>
+        <button class="ghost" data-bulk="source-list" data-on="0">All off</button>
+      </div>
+      <div id="source-list" class="ti-type-grid"></div>
+    </section>
+
+    <section class="ti-section">
       <h2>Data</h2>
       <div class="ti-buttons">
         <button id="export-cfg">Export config</button>

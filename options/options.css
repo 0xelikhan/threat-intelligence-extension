@@ -130,6 +130,14 @@ body {
 }
 .ti-switch span { font-size: 12.5px; color: var(--fg); }
 
+.ti-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  column-gap: 16px;
+}
+.ti-bulk { margin-bottom: 8px; }
+.ti-note { margin: -4px 0 10px; font-size: 11.5px; color: var(--fg-dim); }
+
 .ti-custom {
   display: grid;
   grid-template-columns: 100px 1fr 120px 140px auto;

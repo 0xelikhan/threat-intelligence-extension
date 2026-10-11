@@ -68,8 +68,43 @@
     });
     state.iocs = iocs;
     chrome.runtime.sendMessage({ type: 'PAGE_IOC_COUNT', count: iocs.length }).catch(() => {});
-    highlightMatches(iocs);
+    highlightMatches(iocs.filter(i => isTypeEnabled(i.type)));
   }
+
+  function isTypeEnabled(type) {
+    return state.settings?.behavior?.tooltipTypes?.[type] !== false;
+  }
+
+  // Remove highlights for types that have been switched off
+  function unwrapDisabled() {
+    const spans = [...document.querySelectorAll('span.ti-ioc')]
+      .filter(s => !isTypeEnabled(s.dataset.tiType));
+    if (!spans.length) return;
+    if (spans.includes(state.hoverAnchor)) hideCard();
+    state.isWrapping = true;
+    try {
+      for (const span of spans) {
+        const parent = span.parentNode;
+        if (!parent) continue;
+        parent.replaceChild(document.createTextNode(span.textContent), span);
+        parent.normalize();
+      }
+    } finally {
+      setTimeout(() => { state.isWrapping = false; }, 150);
+    }
+  }
+
+  // Apply type toggles from the Options page without a page reload
+  chrome.storage.onChanged.addListener(async (changes, area) => {
+    if (area !== 'local' || !changes.settings || !state.settings) return;
+    const resp = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }).catch(() => null);
+    if (!resp?.ok) return;
+    state.settings = resp.data;
+    unwrapDisabled();
+    // Forget skipped text nodes so newly enabled types get picked up
+    state.processedNodes = new WeakSet();
+    if (state.settings.behavior.autoScanOnLoad) scheduleScan();
+  });
 
   function highlightMatches(iocs) {
     if (!iocs.length) return;

@@ -67,7 +67,13 @@
       toast('Cannot read page');
       return;
     }
-    const iocs = SOCParser.extract(text, { excludePrivateIPs: true, requireKnownTLD: true });
+    const resp = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }).catch(() => null);
+    const behavior = resp?.data?.behavior || {};
+    const types = behavior.sidepanelUseTooltipTypes === false ? behavior.sidepanelTypes : behavior.tooltipTypes;
+    const iocs = SOCParser.extract(text, {
+      excludePrivateIPs: behavior.excludePrivateIPs !== false,
+      requireKnownTLD: behavior.requireKnownTLD !== false,
+    }).filter(i => types?.[i.type] !== false);
     state.iocs = dedupeIocs(iocs);
     state.enrichments = {};
     render();
@@ -156,8 +162,8 @@
 
     const verdict = enriched ? SOCReport.verdictBadge(enriched) : 'PENDING';
     const cls = verdict.startsWith('MALICIOUS') ? 'bad'
-              : verdict.startsWith('SUSPICIOUS') ? 'warn'
-              : verdict === 'CLEAN' ? 'good' : 'muted';
+      : verdict.startsWith('SUSPICIOUS') ? 'warn'
+        : verdict === 'CLEAN' ? 'good' : 'muted';
 
     card.innerHTML = `
       <div class="ti-card-head">
@@ -471,7 +477,7 @@
   }
 
   function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   function toast(msg) {
