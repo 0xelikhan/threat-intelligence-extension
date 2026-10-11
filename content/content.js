@@ -117,14 +117,21 @@
 
   function highlightMatches(iocs) {
     if (!iocs.length) return;
-    // Build a single alternation regex from unique values, escaped
-    const values = [...new Set(iocs.map(i => i.value))]
-      .filter(v => v.length >= 4 && v.length <= 200)
-      .map(escapeRegex)
-      .sort((a, b) => b.length - a.length);
-    if (!values.length) return;
-    const re = new RegExp('(' + values.join('|') + ')', 'g');
-    const valueToType = new Map(iocs.map(i => [i.value, i.type]));
+    // IOC values are normalized (refanged, lowercased), but the page may show them
+    // defanged or in another case. Match every written form, case-insensitively,
+    // and map each match back to its IOC via the same normalization (highlightKey).
+    const byKey = new Map();
+    for (const i of iocs) {
+      if (i.value.length < 4 || i.value.length > 200) continue;
+      const k = highlightKey(i.value);
+      if (!byKey.has(k)) byKey.set(k, i);
+    }
+    if (!byKey.size) return;
+    const patterns = [...byKey.values()]
+      .sort((a, b) => b.value.length - a.value.length) // longest first
+      .map(i => variantPattern(i));
+    // Don't match inside a longer word, IP or hash (e.g. 8.8.8.8 within 18.8.8.88)
+    const re = new RegExp('(?<![A-Za-z0-9])(?:' + patterns.join('|') + ')(?![A-Za-z0-9])', 'gi');
 
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
@@ -170,19 +177,23 @@
         while ((match = re.exec(text)) !== null) {
           hadMatch = true;
           const start = match.index;
-          const value = match[0];
-          const type = valueToType.get(value) || 'unknown';
+          const written = match[0];
+          const ioc = byKey.get(highlightKey(written));
           if (start > lastIndex) {
             frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
           }
-          const span = document.createElement('span');
-          span.className = `ti-ioc ti-ioc-${type}`;
-          span.textContent = value;
-          span.dataset.tiType = type;
-          span.dataset.tiValue = value;
-          span.tabIndex = 0;
-          frag.appendChild(span);
-          lastIndex = start + value.length;
+          if (ioc) {
+            const span = document.createElement('span');
+            span.className = `ti-ioc ti-ioc-${ioc.type}`;
+            span.textContent = written;
+            span.dataset.tiType = ioc.type;
+            span.dataset.tiValue = ioc.value; // canonical form, used for enrichment
+            span.tabIndex = 0;
+            frag.appendChild(span);
+          } else {
+            frag.appendChild(document.createTextNode(written));
+          }
+          lastIndex = start + written.length;
         }
         if (!hadMatch) { state.processedNodes.add(node); continue; }
         if (lastIndex < text.length) {
@@ -197,6 +208,29 @@
   }
 
   function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Lookup key for an IOC or page text: refanged and lowercased, except a URL's
+  // path and query, which keep their case (they can be case-sensitive).
+  function highlightKey(text) {
+    const v = SOCParser.refang(text);
+    const m = v.match(/^[a-z][a-z0-9+.-]*:\/\/[^/?#]*/i);
+    return m ? m[0].toLowerCase() + v.slice(m[0].length) : v.toLowerCase();
+  }
+
+  // Regex source matching an IOC as written on a page: dots may be defanged as
+  // [.] or (.), and URLs may use hxxp(s). Mirrors SOCParser.refang.
+  function variantPattern(ioc) {
+    let v = ioc.value;
+    let scheme = '';
+    if (ioc.type === 'url') {
+      const m = v.match(/^https?/i);
+      if (m) {
+        scheme = 'h(?:tt|xx)p' + (m[0].length === 5 ? 's' : '');
+        v = v.slice(m[0].length);
+      }
+    }
+    return scheme + v.split('.').map(escapeRegex).join('(?:\\.|\\[\\.\\]|\\(\\.\\))');
+  }
 
   // ─── Hover card ────────────────────────────────────────────────────────────
   function injectHoverCard() {
