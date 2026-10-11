@@ -249,7 +249,7 @@
           window.open(`https://www.abuseipdb.com/check/${encodeURIComponent(ioc)}`, '_blank');
         }
       } else if (act === 'sidepanel') {
-        chrome.runtime.sendMessage({ type: 'SIDEPANEL_ADD_TEXT', text: ioc }).catch(() => {});
+        chrome.runtime.sendMessage({ type: 'ADD_TO_PANEL', text: ioc }).catch(() => {});
       }
     });
 

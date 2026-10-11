@@ -29,12 +29,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!text) return;
 
   if (info.menuItemId === 'ti-enrich-selection') {
-    // Push selection to side panel and open it
-    await chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
-    // Give the panel time to boot then send the payload
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ type: 'SIDEPANEL_ADD_TEXT', text }).catch(() => {});
-    }, 250);
+    // Open first: sidePanel.open must run directly in the user gesture
+    const opened = chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+    await queueForPanel(tab.windowId, text);
+    await opened;
   } else if (info.menuItemId === 'ti-copilot-selection') {
     const iocs = SOCParser.extract(text, { excludePrivateIPs: true, requireKnownTLD: true });
     const settings = await SOCStorage.getSettings();
@@ -66,6 +64,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           requireKnownTLD: settings.behavior.requireKnownTLD,
         });
         sendResponse({ ok: true, data: iocs });
+      } else if (msg?.type === 'ADD_TO_PANEL') {
+        const windowId = sender.tab?.windowId;
+        if (windowId == null) throw new Error('no source window');
+        await queueForPanel(windowId, String(msg.text || ''));
+        sendResponse({ ok: true });
       } else if (msg?.type === 'GET_SETTINGS') {
         sendResponse({ ok: true, data: await SOCStorage.getSettings() });
       } else if (msg?.type === 'SAVE_SETTINGS') {
@@ -88,6 +91,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
   })();
   return true; // async
+});
+
+// ─── Per-window side panel queue ─────────────────────────────────────────────
+// Each window has its own side panel. Text bound for a panel is written to
+// session storage as one key per item, prefixed with that window's id; only
+// that window's panel drains it, whether it's already open or still loading.
+// One key per item means no read-modify-write, so adds and drains can't race.
+const panelQueuePrefix = (windowId) => `panelQueue:${windowId}:`;
+let queueSeq = 0;
+
+async function queueForPanel(windowId, text) {
+  if (!text) return;
+  const key = panelQueuePrefix(windowId) + `${Date.now()}-${queueSeq++}`;
+  await chrome.storage.session.set({ [key]: text });
+}
+
+chrome.windows.onRemoved.addListener(async (windowId) => {
+  const all = await chrome.storage.session.get(null);
+  const stale = Object.keys(all).filter(k => k.startsWith(panelQueuePrefix(windowId)));
+  if (stale.length) await chrome.storage.session.remove(stale);
 });
 
 // ─── Clipboard via offscreen (service worker can't touch clipboard directly) ─

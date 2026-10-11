@@ -14,14 +14,36 @@
 
   document.addEventListener('DOMContentLoaded', init);
 
-  function init() {
+  async function init() {
     bindUi();
-    chrome.runtime.onMessage.addListener((msg) => {
-      if (msg?.type === 'SIDEPANEL_ADD_TEXT' && typeof msg.text === 'string') {
-        $('#pastebox').value = ($('#pastebox').value + '\n' + msg.text).trim();
-        parseInput();
-      }
+    // Only take queued text addressed to this panel's window (see background.js)
+    const { id: windowId } = await chrome.windows.getCurrent();
+    const prefix = `panelQueue:${windowId}:`;
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'session') return;
+      if (Object.keys(changes).some(k => k.startsWith(prefix) && changes[k].newValue)) drainQueue(prefix);
     });
+    drainQueue(prefix);
+  }
+
+  let drainChain = Promise.resolve();
+  function drainQueue(prefix) {
+    drainChain = drainChain.then(async () => {
+      const all = await chrome.storage.session.get(null);
+      const keys = Object.keys(all).filter(k => k.startsWith(prefix)).sort(byQueueOrder);
+      if (!keys.length) return;
+      await chrome.storage.session.remove(keys);
+      const text = keys.map(k => all[k]).join('\n');
+      $('#pastebox').value = ($('#pastebox').value + '\n' + text).trim();
+      parseInput();
+    }).catch(() => {});
+  }
+
+  // Keys end in "<timestamp>-<seq>"; order numerically, not as strings
+  function byQueueOrder(a, b) {
+    const [ta, sa] = a.split(':').pop().split('-').map(Number);
+    const [tb, sb] = b.split(':').pop().split('-').map(Number);
+    return ta - tb || sa - sb;
   }
 
   function bindUi() {
