@@ -338,7 +338,7 @@
         parts.push(row('VirusTotal', 'not indexed'));
       } else {
         const bar = ratioBar(r.virustotal.malicious, r.virustotal.total);
-        parts.push(row('VirusTotal', `${bar} ${r.virustotal.malicious}/${r.virustotal.total}`));
+        parts.push(row('VirusTotal', `${r.virustotal.malicious}/${r.virustotal.total}`, bar));
       }
     }
     if (r.abuseipdb && !r.abuseipdb.error) {
@@ -378,8 +378,10 @@
     return parts.join('');
   }
 
-  function row(label, value) {
-    return `<div class="ti-row"><span class="ti-k">${escapeHtml(label)}</span><span class="ti-v">${escapeHtml(String(value))}</span></div>`;
+  // prefixHtml is trusted markup built here (e.g. ratioBar); value is always escaped
+  function row(label, value, prefixHtml = '') {
+    const prefix = prefixHtml ? prefixHtml + ' ' : '';
+    return `<div class="ti-row"><span class="ti-k">${escapeHtml(label)}</span><span class="ti-v">${prefix}${escapeHtml(String(value))}</span></div>`;
   }
 
   function ratioBar(mal, total) {

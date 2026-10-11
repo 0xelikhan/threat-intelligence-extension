@@ -233,7 +233,7 @@
       if (v.notFound) rows.push(kv('VirusTotal', 'not indexed', v.link));
       else {
         const bar = ratioBar(v.malicious || 0, v.total || 0);
-        rows.push(kv('VirusTotal', `${bar} ${v.malicious || 0}/${v.total || 0}`, v.link));
+        rows.push(kv('VirusTotal', `${v.malicious || 0}/${v.total || 0}`, v.link, bar));
 
         // GTI verdict
         if (v.gti?.verdict) {
@@ -481,9 +481,11 @@
     el.innerHTML = rows.length ? rows.join('') : `<div class="ti-empty-body">No enrichment data</div>`;
   }
 
-  function kv(k, v, link) {
+  // prefixHtml is trusted markup built here (e.g. ratioBar); v is always escaped
+  function kv(k, v, link, prefixHtml = '') {
     const linkStr = link ? ` <a class="ti-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">↗</a>` : '';
-    return `<div class="ti-row"><span class="ti-k">${escapeHtml(k)}</span><span class="ti-v">${escapeHtml(String(v))}${linkStr}</span></div>`;
+    const prefix = prefixHtml ? prefixHtml + ' ' : '';
+    return `<div class="ti-row"><span class="ti-k">${escapeHtml(k)}</span><span class="ti-v">${prefix}${escapeHtml(String(v))}${linkStr}</span></div>`;
   }
 
   function ratioBar(mal, total) {
