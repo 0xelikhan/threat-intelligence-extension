@@ -54,7 +54,17 @@
     return !!(sel && !sel.isCollapsed && sel.toString().length > 0);
   }
 
+  // After the extension is reloaded or updated, scripts already injected in open
+  // tabs lose their connection and every chrome.runtime call throws. Stop quietly.
+  function contextAlive() {
+    if (chrome.runtime?.id) return true;
+    clearTimeout(state.scanTimer);
+    state.mo?.disconnect();
+    return false;
+  }
+
   async function scanAndHighlight() {
+    if (!contextAlive()) return;
     if (!state.settings?.behavior?.hoverTooltipsEnabled) return;
     // Never mutate DOM while the user has an active selection
     if (hasActiveSelection()) {
@@ -67,7 +77,6 @@
       requireKnownTLD: state.settings.behavior.requireKnownTLD,
     });
     state.iocs = iocs;
-    chrome.runtime.sendMessage({ type: 'PAGE_IOC_COUNT', count: iocs.length }).catch(() => {});
     highlightMatches(iocs.filter(i => isTypeEnabled(i.type)));
   }
 
@@ -221,6 +230,7 @@
     el.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('button[data-act]');
       if (!btn) return;
+      if (!contextAlive()) return hideCard();
       const act = btn.dataset.act;
       const ioc = state.hoverAnchor?.dataset.tiValue;
       const type = state.hoverAnchor?.dataset.tiType;
@@ -293,6 +303,7 @@
   }
 
   async function populateCard(anchor) {
+    if (!contextAlive()) return hideCard();
     const type = anchor.dataset.tiType;
     const value = anchor.dataset.tiValue;
     const card = state.hoverEl;
