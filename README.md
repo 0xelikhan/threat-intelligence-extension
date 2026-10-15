@@ -22,6 +22,7 @@ Edge extension for IOC extraction and enrichment.
 - **Team Cymru** — IP → ASN, prefix, country, registry, allocation date (via DoH)
 - **SANS ISC / DShield** — aggregated threatfeed hits, attack counts, ASN abuse contact
 - **DNSSEC validation** — secure / unsigned / bogus state for domains and URL hostnames
+- **PhishTank** — URL phishing verdicts (rate limit shared across all extension users)
 
 ### Key required (Options page)
 
@@ -46,7 +47,6 @@ Edge extension for IOC extraction and enrichment.
 | FullHunt | domain / IP | free | https://fullhunt.io/user/settings/ |
 | Polyswarm | hash / URL | free | https://polyswarm.network/account/api-keys |
 | Intelligence X | IP / domain / URL / hash / email | limited | https://intelx.io/account?tab=developer |
-| PhishTank | URL | free, limited | https://www.phishtank.com/api_register.php |
 
 ### Custom sources
 

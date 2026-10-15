@@ -41,7 +41,7 @@
     ['urlhaus', 'URLhaus (abuse.ch)', ['abusech']],
     ['threatfox', 'ThreatFox (abuse.ch)', ['abusech']],
     ['malwarebazaar', 'MalwareBazaar (abuse.ch)', ['abusech']],
-    ['phishtank', 'PhishTank', ['phishtank']],
+    ['phishtank', 'PhishTank', []],
   ];
 
   // Source on/off state, kept across re-renders of the source list
@@ -57,7 +57,7 @@
     $('#vt').value = s.apiKeys.virustotal || '';
     $('#aipb').value = s.apiKeys.abuseipdb || '';
     $('#gn').value = s.apiKeys.greynoise || '';
-    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech','phishtank'];
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech'];
     for (const k of extraKeys) {
       const el = document.getElementById(k);
       if (el) el.value = s.apiKeys[k] || '';
@@ -154,7 +154,7 @@
       key: el.querySelector('.c-key').value.trim(),
     })).filter(c => c.name && c.url);
 
-    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech','phishtank'];
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech'];
     const apiKeys = {
       virustotal: $('#vt').value.trim(),
       abuseipdb: $('#aipb').value.trim(),
