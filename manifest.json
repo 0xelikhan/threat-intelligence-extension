@@ -50,6 +50,13 @@
     "https://fullhunt.io/*",
     "https://api.polyswarm.network/*",
     "https://2.intelx.io/*",
+    "https://hashlookup.circl.lu/*",
+    "https://stat.ripe.net/*",
+    "https://isc.sans.edu/*",
+    "https://urlhaus-api.abuse.ch/*",
+    "https://threatfox-api.abuse.ch/*",
+    "https://mb-api.abuse.ch/*",
+    "https://checkurl.phishtank.com/*",
     "<all_urls>"
   ],
   "background": {

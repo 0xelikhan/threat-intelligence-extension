@@ -18,6 +18,11 @@
     ['rdap', 'RDAP', []],
     ['nvd', 'NVD (CVEs)', []],
     ['proxycheck', 'ProxyCheck', []],
+    ['circl_hashlookup', 'CIRCL hashlookup', []],
+    ['ripestat', 'RIPE Stat (routing / abuse)', []],
+    ['cymru', 'Team Cymru (ASN)', []],
+    ['dshield', 'SANS ISC / DShield', []],
+    ['dnssec', 'DNSSEC validation', []],
     ['virustotal', 'VirusTotal', ['vt']],
     ['abuseipdb', 'AbuseIPDB', ['aipb']],
     ['greynoise', 'GreyNoise', ['gn']],
@@ -33,6 +38,10 @@
     ['fullhunt', 'FullHunt', ['fullhunt']],
     ['polyswarm', 'PolySwarm', ['polyswarm']],
     ['intelx', 'Intelligence X', ['intelx']],
+    ['urlhaus', 'URLhaus (abuse.ch)', ['abusech']],
+    ['threatfox', 'ThreatFox (abuse.ch)', ['abusech']],
+    ['malwarebazaar', 'MalwareBazaar (abuse.ch)', ['abusech']],
+    ['phishtank', 'PhishTank', ['phishtank']],
   ];
 
   // Source on/off state, kept across re-renders of the source list
@@ -48,7 +57,7 @@
     $('#vt').value = s.apiKeys.virustotal || '';
     $('#aipb').value = s.apiKeys.abuseipdb || '';
     $('#gn').value = s.apiKeys.greynoise || '';
-    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx'];
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech','phishtank'];
     for (const k of extraKeys) {
       const el = document.getElementById(k);
       if (el) el.value = s.apiKeys[k] || '';
@@ -145,7 +154,7 @@
       key: el.querySelector('.c-key').value.trim(),
     })).filter(c => c.name && c.url);
 
-    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx'];
+    const extraKeys = ['proxycheck','ipinfo','shodan','otx','urlscan','crowdsec','pulsedive','censys_id','censys_secret','hybrid_analysis','anyrun','fullhunt','polyswarm','intelx','abusech','phishtank'];
     const apiKeys = {
       virustotal: $('#vt').value.trim(),
       abuseipdb: $('#aipb').value.trim(),
